@@ -87,6 +87,13 @@ QuadTreeNode* GEQuadTree::build(int totNum) {
 	return root;
 }
 
+QuadTreeNode* GEQuadTree::getNodePtrFromString(std::string str) {
+	QuadTreeNode* ret = root;
+	for (int i = 0; i < str.size(); ++i) {
+		ret = ret->nxt[str[i] - '0'];
+	}
+	return ret;
+}
 QuadTreeNode* GEQuadTree::getNodePtr(int row, int column) {
 	QuadTreeNode* ret = gridPtr[row * NUM + column];
 	//Lazy update handled here:

@@ -74,5 +74,13 @@ struct GEQuadTree {
 	*/
 	QuadTreeNode* getNeighbourNodePtr(QuadTreeNode* node, int direction);
 
+
+	/*	Get the pointer of the tree node by traversal. Shouldn't be used in functions other than testing functions.
+		The node must exist.
+				str: the path. e.g. "202"= root->nxt[2]->nxt[0]->nxt[2].
+			Return: the pointer of the node.
+	*/
+	QuadTreeNode* getNodePtrFromString(std::string str);
+
 	~GEQuadTree();
 };

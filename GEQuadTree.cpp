@@ -23,7 +23,6 @@ void QuadTreeNode::split() {
 		if (nxt[i] == NULL) {
 			nxt[i] = new QuadTreeNode();
 			nxt[i]->pre = this;
-			nxt[i]->depth = depth + 1;
 			if (i ^ (i >> 1)) { //i == 1/2
 				nxt[i]->columnLow = columnMid + 1;
 				nxt[i]->columnHigh = columnHigh;
@@ -78,7 +77,6 @@ GEQuadTree::~GEQuadTree() {
 QuadTreeNode* GEQuadTree::build(int totNum) {
 	root = new QuadTreeNode();
 	root->elementCount = 0;
-	root->depth = 0;
 	root->rowLow = root->columnLow = 0;
 	root->rowHigh = root->columnHigh = totNum - 1;
 	root->pre = NULL;
@@ -86,7 +84,6 @@ QuadTreeNode* GEQuadTree::build(int totNum) {
 	root->isMerged = false;
 	gridPtr.resize(totNum * totNum, root);
 	NUM = totNum;
-	DEPTH = round(log2(totNum));
 	return root;
 }
 
@@ -102,9 +99,9 @@ QuadTreeNode* GEQuadTree::getNodePtr(int row, int column) {
 		} else {
 			//get down
 			while (ret->isLeaf == false) {
-				int c1 = (row & (1 << (DEPTH - ret->depth - 1))) > 0;
-				int c2 = (column & (1 << (DEPTH - ret->depth - 1))) > 0;
-				int id = ((c1<<1)|c2)^c1;//trick: (0,0)->0, (0,1)->1, (1,1)->2, (1,0)->3
+				int c1 = row > ((ret->rowLow + ret->rowHigh) >> 1);
+				int c2 = column > ((ret->columnLow + ret->columnHigh) >> 1);
+				int id = ((c1<<1)|c2)^c1;//bitwise-trick: (c1,c2)->id: (0,0)->0, (0,1)->1, (1,1)->2, (1,0)->3
 				ret = ret->nxt[id];
 			}
 		}

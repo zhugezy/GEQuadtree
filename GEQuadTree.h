@@ -16,7 +16,6 @@ struct QuadTreeNode {
 	QuadTreeNode* pre;
 	int rowLow, rowHigh, columnLow, columnHigh;// the rows' and columns' range in this grid.
 	int elementCount;//	Elements contained in this node  % with its subtree excluded. % 
-	int depth;// Depth of the node in the tree.
 	bool isLeaf, isMerged;
 
 	QuadTreeNode();
@@ -36,7 +35,7 @@ struct QuadTreeNode {
 struct GEQuadTree {
 	QuadTreeNode* root;
 	std::vector<QuadTreeNode*> gridPtr;// The bottom-left grid is labeled as grid[0][0].
-	int NUM, DEPTH; //Total row and column count. Must be pow of 2.  eg. NUM=8 means 8*8 Grid, DEPTH=3.
+	int NUM; //Total row and column count. Must be pow of 2.  eg. NUM=8 means 8*8 Grid.
 
 	GEQuadTree();
 

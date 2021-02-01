@@ -42,9 +42,9 @@ void test2() {
 	std::cout << "root address: " << tree.build(8) << std::endl;
 	tree.root->split();
 }
-
+GEQuadTree tree;
 void basictest() {
-	GEQuadTree tree;
+	
 	tree.build(8);
 	tree.root->split();
 	tree.getNodePtrFromString("2")->split();
@@ -136,11 +136,30 @@ void basictest() {
 }
 
 void advancedtest() {
+	tree.getNodePtrFromString("02")->split();
+	assert(tree.getNeighbourNodePtr(tree.getNodePtrFromString("022"), NORTH) == tree.getNodePtrFromString("3"));
+	assert(tree.getNeighbourNodePtr(tree.getNodePtrFromString("022"), SOUTH) == tree.getNodePtrFromString("021"));
+	assert(tree.getNeighbourNodePtr(tree.getNodePtrFromString("022"), WEST) == tree.getNodePtrFromString("023"));
+	assert(tree.getNeighbourNodePtr(tree.getNodePtrFromString("022"), EAST) == tree.getNodePtrFromString("1"));
+	assert(tree.getNeighbourNodePtr(tree.getNodePtrFromString("022"), NORTHEAST) == tree.getNodePtrFromString("20"));
+	assert(tree.getNeighbourNodePtr(tree.getNodePtrFromString("022"), NORTHWEST) == tree.getNodePtrFromString("3"));
+	assert(tree.getNeighbourNodePtr(tree.getNodePtrFromString("022"), SOUTHEAST) == tree.getNodePtrFromString("1"));
+	assert(tree.getNeighbourNodePtr(tree.getNodePtrFromString("022"), SOUTHWEST) == tree.getNodePtrFromString("020"));
 
+	assert(tree.getNeighbourNodePtr(tree.getNodePtrFromString("20"), NORTH) == tree.getNodePtrFromString("230"));
+	assert(tree.getNeighbourNodePtr(tree.getNodePtrFromString("20"), SOUTH) == tree.getNodePtrFromString("1"));
+	assert(tree.getNeighbourNodePtr(tree.getNodePtrFromString("20"), WEST) == tree.getNodePtrFromString("3"));
+	assert(tree.getNeighbourNodePtr(tree.getNodePtrFromString("20"), EAST) == tree.getNodePtrFromString("21"));
+	assert(tree.getNeighbourNodePtr(tree.getNodePtrFromString("20"), NORTHEAST) == tree.getNodePtrFromString("22"));
+	assert(tree.getNeighbourNodePtr(tree.getNodePtrFromString("20"), NORTHWEST) == tree.getNodePtrFromString("3"));
+	assert(tree.getNeighbourNodePtr(tree.getNodePtrFromString("20"), SOUTHEAST) == tree.getNodePtrFromString("1"));
+	assert(tree.getNeighbourNodePtr(tree.getNodePtrFromString("20"), SOUTHWEST) == tree.getNodePtrFromString("022"));
 
+	assert(tree.getNeighbourNodePtr(tree.getNodePtrFromString("22"), WEST) == tree.getNodePtrFromString("231"));
 	std::cout << "Getneighbour test passed" << std::endl;
 	//=======================================
 }
+
 
 int main() {
 	basictest();

@@ -211,6 +211,46 @@ void advancedtest() {
 	assert(st2.find("3") != st2.end());
 	assert(cnt == 1);
 
+	st = tree.queryRange(22, 79, 34, 34);
+	st2.clear();
+	cnt = 0;
+	for (QuadTreeNode* ptr: st) {
+		cnt++;
+		st2.insert(ptr->name);
+	}
+	assert(st2.find("023") != st2.end());
+	assert(st2.find("022") != st2.end());
+	assert(st2.find("1") != st2.end());
+	assert(cnt == 3);
+
+	st = tree.queryRange(1, 3, 19, 64);
+	st2.clear();
+	cnt = 0;
+	for (QuadTreeNode* ptr: st) {
+		cnt++;
+		st2.insert(ptr->name);
+	}
+	assert(st2.find("00") != st2.end());
+	assert(st2.find("03") != st2.end());
+	assert(st2.find("3") != st2.end());
+	assert(cnt == 3);
+
+	st = tree.queryRange(31, 49, 12, 64);
+	st2.clear();
+	cnt = 0;
+	for (QuadTreeNode* ptr: st) {
+		cnt++;
+		st2.insert(ptr->name);
+	}
+	assert(st2.find("012") != st2.end());
+	assert(st2.find("021") != st2.end());
+	assert(st2.find("022") != st2.end());
+	assert(st2.find("3") != st2.end());
+	assert(st2.find("1") != st2.end());
+	assert(st2.find("20") != st2.end());
+	assert(st2.find("230") != st2.end());
+	assert(cnt == 7);
+
 	std::cout << "Range Query (1) test passed" << std::endl;
 	//=======================================
 

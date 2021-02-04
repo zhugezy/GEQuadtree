@@ -6,6 +6,8 @@
 #include <cstring>
 #include <string>
 #include <utility>
+#include <unordered_set>
+#include <queue>
 #include "GEQuadTree.h"
 #ifdef DEBUG
 using namespace std;
@@ -23,7 +25,7 @@ void QuadTreeNode::split() {
 		if (nxt[i] == NULL) {
 			nxt[i] = new QuadTreeNode();
 			nxt[i]->pre = this;
-			if (i ^ (i >> 1)) { //i == 1/2
+			if ((i & 1) ^ (i >> 1)) { //i == 1/2
 				nxt[i]->columnLow = columnMid + 1;
 				nxt[i]->columnHigh = columnHigh;
 			} else {//i == 0/3
@@ -37,6 +39,9 @@ void QuadTreeNode::split() {
 				nxt[i]->rowLow = rowLow;
 				nxt[i]->rowHigh = rowMid;
 			}
+			#ifdef DEBUG
+			nxt[i]->name = this->name + (char)(i + '0');
+			#endif
 		}
 		nxt[i]->elementCount = 0;
 		nxt[i]->isLeaf = true;
@@ -56,8 +61,8 @@ void QuadTreeNode::merge() {
 
 GEQuadTree::GEQuadTree() {}
 
-GEQuadTree::GEQuadTree(int totNum) {
-	build(totNum);
+GEQuadTree::GEQuadTree(int totNum, double xMin, double yMin, double xTot, double yTot) {
+	build(totNum, xMin, yMin, xTot, yTot);
 }
 
 //Test: OK
@@ -74,7 +79,7 @@ GEQuadTree::~GEQuadTree() {
 	func(root);
 }
 
-QuadTreeNode* GEQuadTree::build(int totNum) {
+QuadTreeNode* GEQuadTree::build(int totNum, double xMin, double yMin, double xTot, double yTot) {
 	root = new QuadTreeNode();
 	root->elementCount = 0;
 	root->rowLow = root->columnLow = 0;
@@ -82,8 +87,15 @@ QuadTreeNode* GEQuadTree::build(int totNum) {
 	root->pre = NULL;
 	root->isLeaf = true;
 	root->isMerged = false;
+#ifdef DEBUG
+	root->name = "";
+#endif
 	gridPtr.resize(totNum * totNum, root);
 	NUM = totNum;
+	this->xMin = xMin;
+	this->yMin = yMin;
+	this->xTot = xTot;
+	this->yTot = yTot;
 	return root;
 }
 
@@ -94,6 +106,7 @@ QuadTreeNode* GEQuadTree::getNodePtrFromString(std::string str) {
 	}
 	return ret;
 }
+
 QuadTreeNode* GEQuadTree::getNodePtr(int row, int column) {
 	QuadTreeNode* ret = gridPtr[row * NUM + column];
 	//Lazy update handled here:
@@ -159,6 +172,74 @@ QuadTreeNode* GEQuadTree::getNeighbourNodePtr(QuadTreeNode* node, int direction)
 	} else if (direction & WEST) {
 		dir_col = -1;
 	}
-	
-	return getNodePtr(corner.first + dir_row, corner.second + dir_col);
+	//if (corner.first + dir_row < NUM && corner.second + dir_col < NUM && corner.second + dir_col >= 0 && corner.first + dir_row > 0)
+		return getNodePtr(corner.first + dir_row, corner.second + dir_col);
+	//else
+		//return NULL;
+}
+
+bool segIntersect(double l1, double r1, double l2, double r2) {
+	return !((r1 < l2) || (r2 < l1));
+}
+
+bool segContain(double l1, double r1, double l2, double r2) {
+	if (l1 > l2) {
+		swap(l1, l2);
+		swap(r1, r2);
+	}
+	return l1 <= l2 && r1 <= r2;
+}
+std::unordered_set<QuadTreeNode*> GEQuadTree::queryRange(double xLow, double xHigh, double yLow, double yHigh) {
+	int columnLow = (xLow - this->xMin) / (xTot / NUM);
+	int rowLow = (yLow - this->yMin) / (yTot / NUM);
+	std::unordered_set<QuadTreeNode*> ret;
+	std::queue<std::pair<int, int> > que;
+	ret.insert(getNodePtr(rowLow, columnLow));
+	que.push(std::make_pair(rowLow, columnLow));
+	while (!que.empty()) {
+		pair<int, int> curCellID = que.front();
+		que.pop();
+		QuadTreeNode* curNode = getNodePtr(curCellID.first, curCellID.second);
+		//cout << curNode->name << endl;
+
+		pair<int, int> rightCellID;
+		rightCellID.first = curCellID.first;
+		rightCellID.second = curNode->columnHigh + 1;
+		if (rightCellID.second < NUM) {
+			QuadTreeNode* rightNeighbour = getNodePtr(rightCellID.first, rightCellID.second);
+			if (rightNeighbour != NULL) {
+				//cout << "check: " << rightNeighbour->name << endl;
+				//cout << rightNeighbour->rowLow << " " << rightNeighbour->rowHigh << " " << rightNeighbour->columnLow << " " << rightNeighbour->columnHigh << endl;
+				if (rightCellID.second * (xTot / NUM) <= xHigh && ret.find(rightNeighbour) == ret.end()) {
+					ret.insert(rightNeighbour);
+					if (!segIntersect(curNode->rowLow * (yTot / NUM), curNode->rowHigh * (yTot / NUM), yLow, yLow)) {
+						rightCellID = calcCornerCell(rightNeighbour, SOUTHWEST);
+					}
+					que.push(rightCellID);
+				}
+			}
+		}
+		
+
+		pair<int, int> upperCellID;
+		upperCellID.first = curNode->rowHigh + 1;
+		upperCellID.second = curCellID.second;
+		if (upperCellID.first < NUM) {
+			QuadTreeNode* upperNeighbour = getNodePtr(upperCellID.first, upperCellID.second);
+			if (upperNeighbour != NULL) {
+				//cout << "check: " << upperNeighbour->name << endl;
+				//cout << upperNeighbour->rowLow << " " << upperNeighbour->rowHigh << " " << upperNeighbour->columnLow << " " << upperNeighbour->columnHigh << endl;
+				if (upperCellID.first * (yTot / NUM) <= yHigh && ret.find(upperNeighbour) == ret.end()) {
+					ret.insert(upperNeighbour);
+					if (!segIntersect(curNode->columnLow * (xTot / NUM), curNode->columnHigh * (xTot / NUM), xLow, xLow)) {
+						upperCellID = calcCornerCell(upperNeighbour, SOUTHWEST);
+					}
+					que.push(upperCellID);
+				}
+			}
+		}
+		
+		
+	}
+	return ret;
 }

@@ -17,7 +17,9 @@ struct QuadTreeNode {
 	int rowLow, rowHigh, columnLow, columnHigh;// the rows' and columns' range in this grid.
 	int elementCount;//	Elements contained in this node  % with its subtree excluded. % 
 	bool isLeaf, isMerged;
-
+#ifdef DEBUG
+	std::string name;
+#endif
 	QuadTreeNode();
 
 
@@ -36,18 +38,21 @@ struct GEQuadTree {
 	QuadTreeNode* root;
 	std::vector<QuadTreeNode*> gridPtr;// The bottom-left grid is labeled as grid[0][0].
 	int NUM; //Total row and column count. Must be pow of 2.  eg. NUM=8 means 8*8 Grid.
+	double xMin, yMin, xTot, yTot;
 
 	GEQuadTree();
 
-	GEQuadTree(int totNum);
+	GEQuadTree(int totNum, double xMin, double yMin, double xTot, double yTot);
 
 	/* 	Build a new tree. 
-				totnum: number of grid rows and columns;
+				totNum: number of grid rows and columns;
+				xMin, yMin: the coordinate of the bottom-left corner.
+				xTot, yTot: the side length of the area.
 			Return: root.
 		every element in gridPtr will point to root initially.
 		NUM would be set here.
 	*/
-	QuadTreeNode* build(int totNum);
+	QuadTreeNode* build(int totNum, double xMin, double yMin, double xTot, double yTot);
 
 
 	/*	Get the pointer of the tree node which is grid[row][column] pointing to. 
@@ -67,6 +72,7 @@ struct GEQuadTree {
 
 
 	/*	Get grid[row][column]'s neighbour node.
+		CAUTION: Would get exception when out of bound!
 				row: row number, starting from 0 to ROW-1.
 				column: column number, starting from 0 to COLUMN-1.
 				direction: Must be SOUTH/SOUTHEAST/EAST/NORTHEAST/NORTH/NORTHWEST/WEST/SOUTHWEST, marking the neighbour's direction.
@@ -75,12 +81,20 @@ struct GEQuadTree {
 	QuadTreeNode* getNeighbourNodePtr(QuadTreeNode* node, int direction);
 
 
-	/*	Get the pointer of the tree node by traversal. Shouldn't be used in functions other than testing functions.
+	/*	Get the pointer of the tree node by traversal. 
+		Shouldn't be used in functions other than testing functions.
 		The node must exist.
 				str: the path. e.g. "202"= root->nxt[2]->nxt[0]->nxt[2].
 			Return: the pointer of the node.
 	*/
 	QuadTreeNode* getNodePtrFromString(std::string str);
+
+	/*	Get an unordered_set of nodes in the query range.
+				xLow, xHigh, yLow, yHigh: the query range.
+			Return: an unordered_set of nodes in the query range. 
+
+	*/
+	std::unordered_set<QuadTreeNode*> queryRange(double xLow, double xHigh, double yLow, double yHigh);
 
 	~GEQuadTree();
 };

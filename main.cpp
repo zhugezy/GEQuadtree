@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <cassert>
+#include <unordered_set>
 #include "GEQuadTree.h"
 #ifdef DEBUG
 using namespace std;
@@ -28,7 +29,7 @@ void operator delete(void* o) {
 void test() {
 	srand(time(NULL));
 	GEQuadTree tree;
-	std::cout << "root address: " << tree.build(8) << std::endl;
+	std::cout << "root address: " << tree.build(8, 0, 0, 80, 80) << std::endl;
 	for (int i = 0; i < 5; ++i) {
 		int r = rand() % 8, c = rand() % 8;
 		std::cout << "r = " << r << " c = " << c << " add = " << tree.getNodePtr(r, c) << std::endl;
@@ -39,13 +40,13 @@ void test() {
 void test2() {
 	srand(time(NULL));
 	GEQuadTree tree;
-	std::cout << "root address: " << tree.build(8) << std::endl;
+	std::cout << "root address: " << tree.build(8, 0, 0, 80, 80) << std::endl;
 	tree.root->split();
 }
 GEQuadTree tree;
 void basictest() {
 	
-	tree.build(8);
+	tree.build(8, 0, 0, 80, 80);
 	tree.root->split();
 	tree.getNodePtrFromString("2")->split();
 	tree.getNodePtrFromString("23")->split();
@@ -158,11 +159,124 @@ void advancedtest() {
 	assert(tree.getNeighbourNodePtr(tree.getNodePtrFromString("22"), WEST) == tree.getNodePtrFromString("231"));
 	std::cout << "Getneighbour test passed" << std::endl;
 	//=======================================
+
+	unordered_set<QuadTreeNode*> st;
+	unordered_set<string> st2;
+	int cnt;
+	
+	st = tree.queryRange(23, 62, 35, 70);
+	st2.clear();
+	cnt = 0;
+	for (QuadTreeNode* ptr: st) {
+		cnt++;
+		st2.insert(ptr->name);
+	}
+	assert(st2.find("023") != st2.end());
+	assert(st2.find("022") != st2.end());
+	assert(st2.find("1") != st2.end());
+	assert(st2.find("3") != st2.end());
+	assert(st2.find("20") != st2.end());
+	assert(st2.find("21") != st2.end());
+	assert(st2.find("230") != st2.end());
+	assert(st2.find("231") != st2.end());
+	assert(st2.find("22") != st2.end());
+	assert(st2.find("232") != st2.end());
+	assert(st2.find("233") != st2.end());
+	assert(cnt == 11);
+	
+
+	st = tree.queryRange(16, 53, 16, 23);
+	st2.clear();
+	cnt = 0;
+	for (QuadTreeNode* ptr: st) {
+		cnt++;
+		st2.insert(ptr->name);
+	}
+	assert(st2.find("00") != st2.end());
+	assert(st2.find("03") != st2.end());
+	assert(st2.find("020") != st2.end());
+	assert(st2.find("013") != st2.end());
+	assert(st2.find("021") != st2.end());
+	assert(st2.find("012") != st2.end());
+	assert(st2.find("1") != st2.end());
+	assert(cnt == 7);
+
+	st = tree.queryRange(13, 21, 67, 68);
+	st2.clear();
+	cnt = 0;
+	for (QuadTreeNode* ptr: st) {
+		cnt++;
+		st2.insert(ptr->name);
+	}
+	assert(st2.find("3") != st2.end());
+	assert(cnt == 1);
+
+	std::cout << "Range Query (1) test passed" << std::endl;
+	//=======================================
+
+	//y=y*2+10, x=x+5 and testing again.
+	GEQuadTree tree2;
+	tree2.build(8, 5, 10, 80, 160);
+	tree2.root->split();
+	tree2.getNodePtrFromString("2")->split();
+	tree2.getNodePtrFromString("23")->split();
+	tree2.getNodePtrFromString("0")->split();
+	tree2.getNodePtrFromString("01")->split();
+	tree2.getNodePtrFromString("02")->split();
+
+	st = tree2.queryRange(28, 67, 80, 150);
+	st2.clear();
+	cnt = 0;
+	for (QuadTreeNode* ptr: st) {
+		cnt++;
+		st2.insert(ptr->name);
+	}
+	assert(st2.find("023") != st2.end());
+	assert(st2.find("022") != st2.end());
+	assert(st2.find("1") != st2.end());
+	assert(st2.find("3") != st2.end());
+	assert(st2.find("20") != st2.end());
+	assert(st2.find("21") != st2.end());
+	assert(st2.find("230") != st2.end());
+	assert(st2.find("231") != st2.end());
+	assert(st2.find("22") != st2.end());
+	assert(st2.find("232") != st2.end());
+	assert(st2.find("233") != st2.end());
+	assert(cnt == 11);
+	
+
+	st = tree2.queryRange(21, 58, 42, 56);
+	st2.clear();
+	cnt = 0;
+	for (QuadTreeNode* ptr: st) {
+		cnt++;
+		st2.insert(ptr->name);
+	}
+	assert(st2.find("00") != st2.end());
+	assert(st2.find("03") != st2.end());
+	assert(st2.find("020") != st2.end());
+	assert(st2.find("013") != st2.end());
+	assert(st2.find("021") != st2.end());
+	assert(st2.find("012") != st2.end());
+	assert(st2.find("1") != st2.end());
+	assert(cnt == 7);
+
+	st = tree2.queryRange(18, 26, 144, 146);
+	st2.clear();
+	cnt = 0;
+	for (QuadTreeNode* ptr: st) {
+		cnt++;
+		st2.insert(ptr->name);
+	}
+	assert(st2.find("3") != st2.end());
+	assert(cnt == 1);
+
+	std::cout << "Range Query (2) test passed" << std::endl;
+	//=======================================
 }
 
 
 int main() {
 	basictest();
 	advancedtest();
-
 }

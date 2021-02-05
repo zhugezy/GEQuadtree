@@ -11,6 +11,12 @@
 using namespace std;
 #endif
 
+struct Element {
+	double x, y;
+	Element();
+	Element(double _x, double _y);
+};
+
 struct QuadTreeNode {
 	QuadTreeNode* nxt[BRANCH_COUNT];
 	QuadTreeNode* pre;
@@ -37,6 +43,7 @@ struct QuadTreeNode {
 struct GEQuadTree {
 	QuadTreeNode* root;
 	std::vector<QuadTreeNode*> gridPtr;// The bottom-left grid is labeled as grid[0][0].
+	std::vector<std::vector<Element> > gridElements;
 	int NUM; //Total row and column count. Must be pow of 2.  eg. NUM=8 means 8*8 Grid.
 	double xMin, yMin, xTot, yTot;
 
@@ -53,6 +60,14 @@ struct GEQuadTree {
 		NUM would be set here.
 	*/
 	QuadTreeNode* build(int totNum, double xMin, double yMin, double xTot, double yTot);
+
+
+	/* 	Add an element.
+				ele: the element.
+			Return: the cell index (r, c) where ele is added into.
+
+	*/
+	std::pair<int, int> addElement(Element ele);
 
 
 	/*	Get the pointer of the tree node which is grid[row][column] pointing to. 
@@ -81,6 +96,13 @@ struct GEQuadTree {
 	QuadTreeNode* getNeighbourNodePtr(QuadTreeNode* node, int direction);
 
 
+	/*	Get node's all neighbour nodes.
+				queryNode: query node.
+			Return: an unordered_set containing all neighbours' pointers.
+	*/
+	std::unordered_set<QuadTreeNode*> getAllNeighbourNodePtr(QuadTreeNode* queryNode);
+
+
 	/*	Get the pointer of the tree node by traversal. 
 		Shouldn't be used in functions other than testing functions.
 		The node must exist.
@@ -95,6 +117,13 @@ struct GEQuadTree {
 
 	*/
 	std::unordered_set<QuadTreeNode*> queryRange(double xLow, double xHigh, double yLow, double yHigh);
+
+	/* Get a vector of k-nearest neighbours of (xQuery, yQuery).
+				xQuery, yQuery: the query location.
+				K: number of nearest neighbours.
+			Return: a vector of of k-nearest neighbours of (xQuery, yQuery).
+	*/
+	std::vector<Element> querykNearestNeighbour(double xQuery, double yQuery, int K);
 
 	~GEQuadTree();
 };

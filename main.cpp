@@ -5,6 +5,7 @@
 #include <ctime>
 #include <cassert>
 #include <unordered_set>
+#include <set>
 #include "GEQuadTree.h"
 #ifdef DEBUG
 using namespace std;
@@ -147,6 +148,8 @@ void advancedtest() {
 	assert(tree.getNeighbourNodePtr(tree.getNodePtrFromString("022"), SOUTHEAST) == tree.getNodePtrFromString("1"));
 	assert(tree.getNeighbourNodePtr(tree.getNodePtrFromString("022"), SOUTHWEST) == tree.getNodePtrFromString("020"));
 
+	assert(tree.getNeighbourNodePtr(tree.getNodePtrFromString("012"), SOUTHWEST) == tree.getNodePtrFromString("010"));
+
 	assert(tree.getNeighbourNodePtr(tree.getNodePtrFromString("20"), NORTH) == tree.getNodePtrFromString("230"));
 	assert(tree.getNeighbourNodePtr(tree.getNodePtrFromString("20"), SOUTH) == tree.getNodePtrFromString("1"));
 	assert(tree.getNeighbourNodePtr(tree.getNodePtrFromString("20"), WEST) == tree.getNodePtrFromString("3"));
@@ -159,10 +162,73 @@ void advancedtest() {
 	assert(tree.getNeighbourNodePtr(tree.getNodePtrFromString("22"), WEST) == tree.getNodePtrFromString("231"));
 	std::cout << "Getneighbour test passed" << std::endl;
 	//=======================================
-
 	unordered_set<QuadTreeNode*> st;
 	unordered_set<string> st2;
 	int cnt;
+	//=======================================
+	st2.clear();
+	st = tree.getAllNeighbourNodePtr(tree.getNodePtrFromString("233"));
+	for (QuadTreeNode* ptr: st) {
+		st2.insert(ptr->name);
+	}
+	assert(st2.find("3") != st2.end());
+	assert(st2.find("232") != st2.end());
+	assert(st2.find("230") != st2.end());
+	assert(st2.find("231") != st2.end());
+	assert(st2.size() == 4);
+
+	st2.clear();
+	st = tree.getAllNeighbourNodePtr(tree.getNodePtrFromString("230"));
+	for (QuadTreeNode* ptr: st) {
+		st2.insert(ptr->name);
+	}
+	assert(st2.find("3") != st2.end());
+	assert(st2.find("233") != st2.end());
+	assert(st2.find("232") != st2.end());
+	assert(st2.find("231") != st2.end());
+	assert(st2.find("20") != st2.end());
+	assert(st2.size() == 5);
+
+	st2.clear();
+	st = tree.getAllNeighbourNodePtr(tree.getNodePtrFromString("231"));
+	for (QuadTreeNode* ptr: st) {
+		st2.insert(ptr->name);
+	}
+	assert(st2.find("21") != st2.end());
+	assert(st2.find("233") != st2.end());
+	assert(st2.find("232") != st2.end());
+	assert(st2.find("230") != st2.end());
+	assert(st2.find("20") != st2.end());
+	assert(st2.find("22") != st2.end());
+	assert(st2.size() == 6);
+
+	st2.clear();
+	st = tree.getAllNeighbourNodePtr(tree.getNodePtrFromString("012"));
+	for (QuadTreeNode* ptr: st) {
+		st2.insert(ptr->name);
+	}
+	assert(st2.find("020") != st2.end());
+	assert(st2.find("021") != st2.end());
+	assert(st2.find("013") != st2.end());
+	assert(st2.find("010") != st2.end());
+	assert(st2.find("011") != st2.end());
+	assert(st2.find("1") != st2.end());
+	assert(st2.size() == 6);
+
+	st2.clear();
+	st = tree.getAllNeighbourNodePtr(tree.getNodePtrFromString("00"));
+	for (QuadTreeNode* ptr: st) {
+		st2.insert(ptr->name);
+	}
+	assert(st2.find("03") != st2.end());
+	assert(st2.find("020") != st2.end());
+	assert(st2.find("013") != st2.end());
+	assert(st2.find("010") != st2.end());
+	assert(st2.size() == 4);
+
+	std::cout << "GetAllNeighbour test passed" << std::endl;
+	//=======================================
+	
 	
 	st = tree.queryRange(23, 62, 35, 70);
 	st2.clear();
@@ -313,6 +379,111 @@ void advancedtest() {
 
 	std::cout << "Range Query (2) test passed" << std::endl;
 	//=======================================
+
+	tree.addElement(Element(12, 5));
+	tree.addElement(Element(22,36));
+	tree.addElement(Element(77,77));
+	tree.addElement(Element(46,61));
+	tree.addElement(Element(39,41));
+	tree.addElement(Element(60,20));
+	tree.addElement(Element(39,25));
+
+	std::vector<Element> ret;
+	std::set<std::pair<double,double> > st3;
+	st3.clear();
+	ret = tree.querykNearestNeighbour(26, 38, 1);
+	for (Element ele: ret) {
+		st3.insert(make_pair(ele.x, ele.y));
+	}
+	assert(st3.find(make_pair(22, 36)) != st3.end());
+	assert(st3.size() == 1);
+
+	st3.clear();
+	ret = tree.querykNearestNeighbour(26, 38, 2);
+	for (Element ele: ret) {
+		st3.insert(make_pair(ele.x, ele.y));
+	}
+	assert(st3.find(make_pair(22, 36)) != st3.end());
+	assert(st3.find(make_pair(39, 41)) != st3.end());
+	assert(st3.size() == 2);
+
+	st3.clear();
+	ret = tree.querykNearestNeighbour(26, 38, 3);
+	for (Element ele: ret) {
+		st3.insert(make_pair(ele.x, ele.y));
+	}
+	assert(st3.find(make_pair(22, 36)) != st3.end());
+	assert(st3.find(make_pair(39, 41)) != st3.end());
+	assert(st3.find(make_pair(39, 25)) != st3.end());
+	assert(st3.size() == 3);
+
+	st3.clear();
+	ret = tree.querykNearestNeighbour(26, 38, 4);
+	for (Element ele: ret) {
+		st3.insert(make_pair(ele.x, ele.y));
+	}
+	assert(st3.find(make_pair(22, 36)) != st3.end());
+	assert(st3.find(make_pair(39, 41)) != st3.end());
+	assert(st3.find(make_pair(39, 25)) != st3.end());
+	assert(st3.find(make_pair(46, 61)) != st3.end());
+	assert(st3.size() == 4);
+
+	st3.clear();
+	ret = tree.querykNearestNeighbour(26, 38, 5);
+	for (Element ele: ret) {
+		st3.insert(make_pair(ele.x, ele.y));
+	}
+	assert(st3.find(make_pair(22, 36)) != st3.end());
+	assert(st3.find(make_pair(39, 41)) != st3.end());
+	assert(st3.find(make_pair(39, 25)) != st3.end());
+	assert(st3.find(make_pair(46, 61)) != st3.end());
+	assert(st3.find(make_pair(12,  5)) != st3.end());
+	assert(st3.size() == 5);
+
+	st3.clear();
+	ret = tree.querykNearestNeighbour(26, 38, 6);
+	for (Element ele: ret) {
+		st3.insert(make_pair(ele.x, ele.y));
+	}
+	assert(st3.find(make_pair(22, 36)) != st3.end());
+	assert(st3.find(make_pair(39, 41)) != st3.end());
+	assert(st3.find(make_pair(39, 25)) != st3.end());
+	assert(st3.find(make_pair(46, 61)) != st3.end());
+	assert(st3.find(make_pair(12,  5)) != st3.end());
+	assert(st3.find(make_pair(60, 20)) != st3.end());
+	assert(st3.size() == 6);
+
+	st3.clear();
+	ret = tree.querykNearestNeighbour(26, 38, 7);
+	for (Element ele: ret) {
+		st3.insert(make_pair(ele.x, ele.y));
+	}
+	assert(st3.find(make_pair(22, 36)) != st3.end());
+	assert(st3.find(make_pair(39, 41)) != st3.end());
+	assert(st3.find(make_pair(39, 25)) != st3.end());
+	assert(st3.find(make_pair(46, 61)) != st3.end());
+	assert(st3.find(make_pair(12,  5)) != st3.end());
+	assert(st3.find(make_pair(60, 20)) != st3.end());
+	assert(st3.find(make_pair(77, 77)) != st3.end());
+	assert(st3.size() == 7);
+
+	st3.clear();
+	ret = tree.querykNearestNeighbour(26, 38, 114514);
+	for (Element ele: ret) {
+		st3.insert(make_pair(ele.x, ele.y));
+	}
+	assert(st3.find(make_pair(22, 36)) != st3.end());
+	assert(st3.find(make_pair(39, 41)) != st3.end());
+	assert(st3.find(make_pair(39, 25)) != st3.end());
+	assert(st3.find(make_pair(46, 61)) != st3.end());
+	assert(st3.find(make_pair(12,  5)) != st3.end());
+	assert(st3.find(make_pair(60, 20)) != st3.end());
+	assert(st3.find(make_pair(77, 77)) != st3.end());
+	assert(st3.size() == 7);
+
+	std::cout << "k-NN test passed" << std::endl;
+
+	std::cout << "========== ALL TESTS PASSED! ==========" << std::endl;
 }
 
 

@@ -12,6 +12,13 @@
 #ifdef DEBUG
 using namespace std;
 #endif
+
+Element::Element() {}
+
+Element::Element(double _x, double _y) {
+	x = _x, y = _y;
+}
+
 QuadTreeNode::QuadTreeNode() {
 	nxt[0] = nxt[1] = nxt[2] = nxt[3] = NULL;
 }
@@ -91,12 +98,20 @@ QuadTreeNode* GEQuadTree::build(int totNum, double xMin, double yMin, double xTo
 	root->name = "";
 #endif
 	gridPtr.resize(totNum * totNum, root);
+	gridElements.resize(totNum * totNum);
 	NUM = totNum;
 	this->xMin = xMin;
 	this->yMin = yMin;
 	this->xTot = xTot;
 	this->yTot = yTot;
 	return root;
+}
+
+std::pair<int, int> GEQuadTree::addElement(Element ele) {
+	int col = (ele.x - this->xMin) / (this->xTot / NUM);
+	int row = (ele.y - this->yMin) / (this->yTot / NUM);
+	this->gridElements[row*NUM+col].push_back(ele);
+	return std::make_pair(row, col);
 }
 
 QuadTreeNode* GEQuadTree::getNodePtrFromString(std::string str) {
@@ -172,10 +187,11 @@ QuadTreeNode* GEQuadTree::getNeighbourNodePtr(QuadTreeNode* node, int direction)
 	} else if (direction & WEST) {
 		dir_col = -1;
 	}
-	//if (corner.first + dir_row < NUM && corner.second + dir_col < NUM && corner.second + dir_col >= 0 && corner.first + dir_row > 0)
+
+	if (corner.first + dir_row < NUM && corner.second + dir_col < NUM && corner.second + dir_col >= 0 && corner.first + dir_row >= 0)
 		return getNodePtr(corner.first + dir_row, corner.second + dir_col);
-	//else
-		//return NULL;
+	else
+		return NULL;
 }
 
 bool segIntersect(double l1, double r1, double l2, double r2) {
@@ -189,6 +205,7 @@ bool segContain(double l1, double r1, double l2, double r2) {
 	}
 	return l1 <= l2 && r1 <= r2;
 }
+
 std::unordered_set<QuadTreeNode*> GEQuadTree::queryRange(double xLow, double xHigh, double yLow, double yHigh) {
 	int columnLow = (xLow - this->xMin) / (xTot / NUM);
 	int rowLow = (yLow - this->yMin) / (yTot / NUM);
@@ -220,7 +237,6 @@ std::unordered_set<QuadTreeNode*> GEQuadTree::queryRange(double xLow, double xHi
 			}
 		}
 		
-
 		pair<int, int> upperCellID;
 		upperCellID.first = curNode->rowHigh + 1;
 		upperCellID.second = curCellID.second;
@@ -238,8 +254,107 @@ std::unordered_set<QuadTreeNode*> GEQuadTree::queryRange(double xLow, double xHi
 				}
 			}
 		}
-		
-		
+	}
+	return ret;
+}
+
+template<typename T, typename Y>
+struct comparePairSecondFunc {
+	bool operator() (std::pair<T, Y> p, std::pair<T, Y> q)  {
+		return p.second > q.second;
+	}
+};
+
+double calcDistanceSquare(double x1, double y1, double x2, double y2) {
+
+	return (x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1);
+}
+
+double calcDistanceSquare(double xLow, double xHigh, double yLow, double yHigh, double xQ, double yQ) {
+	if (yQ < yLow) {
+		if (xQ < xLow) {
+			return calcDistanceSquare(xLow, yLow, xQ, yQ);
+		} else if (xQ < xHigh) {
+			return yLow - yQ;
+		} else {
+			return calcDistanceSquare(xHigh, yLow, xQ, yQ);
+		}
+	} else if (yQ < yHigh) {
+		if (xQ < xLow) {
+			return xLow - xQ;
+		} else if (xQ < xHigh) {
+			return 0;
+		} else {
+			return xQ - xHigh;
+		}
+	} else {
+		if (xQ < xLow) {
+			return calcDistanceSquare(xLow, yHigh, xQ, yQ);
+		} else if (xQ < xHigh) {
+			return yQ - yHigh;
+		} else {
+			return calcDistanceSquare(xHigh, yHigh, xQ, yQ);
+		}
+	}
+}
+
+std::unordered_set<QuadTreeNode*> GEQuadTree::getAllNeighbourNodePtr(QuadTreeNode* queryNode) {
+	std::unordered_set<QuadTreeNode*> ret;
+	ret = queryRange(max(0.0, (queryNode->columnLow - 1) * (this->xTot / NUM)), 
+					 max(0.0, (queryNode->columnHigh + 1) * (this->xTot / NUM)), 
+					 max(0.0, (queryNode->rowLow - 1) * (this->yTot / NUM)), 
+					 max(0.0, (queryNode->rowHigh + 1) * (this->yTot / NUM))
+		);
+	ret.erase(queryNode);
+	return ret;
+}
+
+
+std::vector<Element> GEQuadTree::querykNearestNeighbour(double xQuery, double yQuery, int K) {
+	std::vector<Element> ret;
+	int curRow = (xQuery - this->xMin) / (xTot / NUM);
+	int curCol = (yQuery - this->yMin) / (yTot / NUM);
+	QuadTreeNode* curNode = getNodePtr(curRow, curCol);
+	std::priority_queue<std::pair<QuadTreeNode*, double>, 
+						std::vector<std::pair<QuadTreeNode*, double> >, 
+						comparePairSecondFunc<QuadTreeNode*, double> > queNode;
+	std::priority_queue<std::pair<Element, double>, 
+						std::vector<std::pair<Element, double> >, 
+						comparePairSecondFunc<Element, double> > queElement;
+	std::unordered_set<QuadTreeNode*> vis;
+	queNode.push(std::make_pair(curNode, 0));
+	while (!queNode.empty() || !queElement.empty()) {
+		if (queElement.empty() || (!queNode.empty() && queNode.top().second < queElement.top().second)) {
+			QuadTreeNode* curNode = queNode.top().first;
+			queNode.pop();
+			if (vis.find(curNode) == vis.end()) {
+				vis.insert(curNode);
+				for (int r = curNode->rowLow; r <= curNode->rowHigh; ++r) {
+					for (int c = curNode->columnLow; c <= curNode->columnHigh; ++c) {
+						for (Element ele: gridElements[r*NUM+c]) {
+							queElement.push(make_pair(ele, calcDistanceSquare(ele.x, ele.y, xQuery, yQuery)));
+						}
+					}
+				}
+				
+				std::unordered_set<QuadTreeNode*> temp = getAllNeighbourNodePtr(curNode);
+				for (QuadTreeNode* nxtNode: temp) {
+					if (vis.find(nxtNode) == vis.end()) {
+						double 	nxtxLow = nxtNode->columnLow * (this->xTot / NUM),
+								nxtxHigh= nxtNode->columnHigh * (this->xTot / NUM), 
+								nxtyLow = nxtNode->rowLow * (this->yTot / NUM), 
+								nxtyHigh= nxtNode->rowHigh * (this->yTot / NUM);
+						queNode.push(make_pair(nxtNode, calcDistanceSquare(nxtxLow, nxtxHigh, nxtyLow, nxtyHigh, xQuery, yQuery)));
+					}
+				}
+			}
+			
+		} else {
+			ret.push_back(queElement.top().first);
+			queElement.pop();
+			if (ret.size() == K)
+				return ret;
+		}
 	}
 	return ret;
 }

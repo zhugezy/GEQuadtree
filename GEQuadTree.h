@@ -70,7 +70,7 @@ struct GEQuadTree {
 	std::pair<int, int> addElement(Element ele);
 
 
-	/*	Get the pointer of the tree node which is grid[row][column] pointing to. 
+	/*	Get the pointer of the tree node which grid[row][column] is pointing to. 
 				row: row number, starting from 0 to ROW-1.
 				column: column number, starting from 0 to COLUMN-1.
 			Return: pointer described above.
@@ -87,7 +87,7 @@ struct GEQuadTree {
 
 
 	/*	Get grid[row][column]'s neighbour node.
-		CAUTION: Would get exception when out of bound!
+		CAUTION: Would get ERROR when out of bound!
 				row: row number, starting from 0 to ROW-1.
 				column: column number, starting from 0 to COLUMN-1.
 				direction: Must be SOUTH/SOUTHEAST/EAST/NORTHEAST/NORTH/NORTHWEST/WEST/SOUTHWEST, marking the neighbour's direction.
